@@ -5,13 +5,13 @@ A decentralized platform for crowdsourcing predictions on emerging technologies 
 TrendLink allows users to:
 - Create prediction markets for technology trends
 - Make predictions by staking tokens
-- Earn rewards for accurate predictions
+- Earn rewards for accurate predictions 
 - Vote on the outcome of predictions
 
 ## Contracts
 - `trend-market.clar`: Core prediction market functionality
 - `trend-token.clar`: Native platform token implementation
-- `trend-governance.clar`: Voting and resolution mechanisms
+- `trend-governance.clar`: Voting and resolution mechanisms with one-vote-per-user enforcement
 
 ## Getting Started
 [Instructions for deploying and interacting with contracts]
