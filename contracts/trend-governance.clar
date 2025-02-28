@@ -1,7 +1,13 @@
 ;; TrendLink Governance Implementation
+
+;; Constants
 (define-constant min-votes u10)
 (define-constant vote-period-blocks u144) ;; ~24 hours
+(define-constant err-prediction-not-found (err u404))
+(define-constant err-voting-closed (err u401))
+(define-constant err-already-voted (err u403))
 
+;; Data Maps
 (define-map resolution-votes
   { prediction-id: uint }
   {
@@ -17,12 +23,13 @@
   { voted: bool }
 )
 
+;; Public Functions
 (define-public (start-resolution
   (prediction-id uint)
 )
   (let
     (
-      (pred (unwrap! (map-get? predictions {id: prediction-id}) (err u404)))
+      (pred (try! (contract-call? .trend-market get-prediction prediction-id)))
     )
     (asserts! (>= block-height (get end-block pred)) (err u401))
     (ok (map-insert resolution-votes
@@ -43,11 +50,11 @@
 )
   (let
     (
-      (votes (unwrap! (map-get? resolution-votes {prediction-id: prediction-id}) (err u404)))
+      (votes (unwrap! (map-get? resolution-votes {prediction-id: prediction-id}) err-prediction-not-found))
       (already-voted (default-to {voted: false} (map-get? user-votes {prediction-id: prediction-id, voter: tx-sender})))
     )
-    (asserts! (< block-height (get end-block votes)) (err u401))
-    (asserts! (not (get voted already-voted)) (err u403))
+    (asserts! (< block-height (get end-block votes)) err-voting-closed)
+    (asserts! (not (get voted already-voted)) err-already-voted)
     (map-set user-votes
       {prediction-id: prediction-id, voter: tx-sender}
       {voted: true}
@@ -74,4 +81,13 @@
     )
     (ok true)
   )
+)
+
+;; Read-only Functions
+(define-read-only (get-votes (prediction-id uint))
+  (map-get? resolution-votes {prediction-id: prediction-id})
+)
+
+(define-read-only (has-voted (prediction-id uint) (voter principal))
+  (default-to false (get voted (map-get? user-votes {prediction-id: prediction-id, voter: voter})))
 )
