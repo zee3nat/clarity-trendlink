@@ -4,10 +4,13 @@
 
 ;; Constants
 (define-constant min-blocks-until-close u72) ;; Minimum 12 hours
+(define-constant min-stake-amount u50) ;; Minimum stake amount
 (define-constant err-invalid-duration (err u405))
 (define-constant err-prediction-not-found (err u404))
 (define-constant err-prediction-closed (err u401))
 (define-constant err-insufficient-stake (err u402))
+(define-constant err-invalid-stake (err u406))
+(define-constant err-not-resolved (err u407))
 
 ;; Data Maps
 (define-map predictions 
@@ -39,6 +42,7 @@
       (prediction-id (var-get next-prediction-id))
     )
     (asserts! (>= blocks-until-close min-blocks-until-close) err-invalid-duration)
+    (asserts! (>= stake-amount min-stake-amount) err-invalid-stake)
     (map-insert predictions
       { id: prediction-id }
       {
@@ -70,6 +74,20 @@
       { prediction-id: prediction-id, user: tx-sender }
       { prediction: prediction, stake: stake }
     ))
+  )
+)
+
+(define-public (claim-stake
+  (prediction-id uint)
+)
+  (let
+    (
+      (pred (unwrap! (map-get? predictions {id: prediction-id}) err-prediction-not-found))
+      (user-pred (unwrap! (map-get? user-predictions {prediction-id: prediction-id, user: tx-sender}) err-prediction-not-found))
+    )
+    (asserts! (get resolved pred) err-not-resolved)
+    (try! (as-contract (contract-call? .trend-token transfer (get stake user-pred) (as-contract tx-sender) tx-sender)))
+    (ok true)
   )
 )
 
