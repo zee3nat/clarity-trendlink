@@ -2,7 +2,7 @@ import { Clarinet, Tx, Chain, Account, types } from 'https://deno.land/x/clarine
 import { assertEquals } from 'https://deno.land/std@0.90.0/testing/asserts.ts';
 
 Clarinet.test({
-  name: "Ensures users can create predictions",
+  name: "Ensures users can create predictions with valid stake",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const wallet_1 = accounts.get("wallet_1")!;
     
@@ -10,15 +10,20 @@ Clarinet.test({
       Tx.contractCall("trend-market", "create-prediction", 
         ["Test prediction", types.uint(100), types.uint(144)], 
         wallet_1.address
+      ),
+      Tx.contractCall("trend-market", "create-prediction", 
+        ["Test prediction", types.uint(40), types.uint(144)], 
+        wallet_1.address
       )
     ]);
     
     assertEquals(block.receipts[0].result.expectOk(), "u0");
+    assertEquals(block.receipts[1].result.expectErr(), 406);
   },
 });
 
 Clarinet.test({
-  name: "Ensures users can make predictions with sufficient stake",
+  name: "Ensures users can make predictions and claim stakes",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
